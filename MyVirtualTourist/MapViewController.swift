@@ -22,18 +22,23 @@ class MapViewController: UIViewController, UIGestureRecognizerDelegate, NSFetche
     }
     
     @IBOutlet weak var mapView: MKMapView!
+    var selectedAnnotation = MKPointAnnotation()
     
     
     // MARK: - LifeCycle
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(self.handleTap(gestureReconizer:)))
+        let tapGesture = UILongPressGestureRecognizer(target: self, action: #selector(self.handleTap(gestureReconizer:)))
         tapGesture.delegate = self
         mapView.addGestureRecognizer(tapGesture)
         
         // Set the title
         title = "Virtual Tourist"
+        
+        // Get the stack
+        let delegate = UIApplication.shared.delegate as! AppDelegate
+        let stack = delegate.stack
         
         //Load last user location and zoom level from NSUserDefaults
         mapView.delegate = self
@@ -45,10 +50,6 @@ class MapViewController: UIViewController, UIGestureRecognizerDelegate, NSFetche
         if let latitudeValueOnLoad = latitudeValueOnLoad, let longitudeValueOnLoad = longitudeValueOnLoad, let spanLatitudeValueOnLoad = spanLatitudeValueOnLoad, let spanLongitudeValueOnLoad = spanLongitudeValueOnLoad {
             mapView.region = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: latitudeValueOnLoad as! CLLocationDegrees, longitude: longitudeValueOnLoad as! CLLocationDegrees), span: MKCoordinateSpan(latitudeDelta: spanLatitudeValueOnLoad as! CLLocationDegrees, longitudeDelta: spanLongitudeValueOnLoad as! CLLocationDegrees))
         }
-        
-        // Get the stack
-        let delegate = UIApplication.shared.delegate as! AppDelegate
-        let stack = delegate.stack
         
         // Create a fetchrequest for pins
         let fr = NSFetchRequest<NSFetchRequestResult>(entityName: "Pin")
@@ -100,6 +101,7 @@ extension MapViewController {
         let annotation = MKPointAnnotation()
         annotation.coordinate = coordinate
         mapView.addAnnotation(annotation)
+        selectedAnnotation = annotation
     }
 }
 
@@ -114,8 +116,18 @@ extension MapViewController: MKMapViewDelegate {
         UserDefaults.standard.set(mapView.region.span.longitudeDelta, forKey: "mapSpanLongitudeDelta")
     }
     
-    func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-        <#code#>
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if (segue.identifier == "pin")
+        {
+            print("SELECTED: \(selectedAnnotation)")
+            let PhotosVC = segue.destination as! PhotoCollectionViewController
+            PhotosVC.annotation = self.selectedAnnotation
+        }
     }
     
+    func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
+        self.selectedAnnotation = view.annotation as! MKPointAnnotation
+        performSegue(withIdentifier: "pin", sender: view)
+        
+    }
 }
