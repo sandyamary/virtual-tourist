@@ -14,7 +14,7 @@ import Foundation
 extension FlickrClient {
     
     
-    func getPhotoCollection(lat: Float?, lon: Float?, completionHandlerForPhotos: @escaping (_ numOfPages: Int?, _ error: NSError?) -> Void) {
+    func getPhotoCollection(lat: Double?, lon: Double?, completionHandlerForPhotos: @escaping (_ numOfPages: Int?, _ error: NSError?) -> Void) {
         
         let _ = taskForGETMethod(lat: lat, lon: lon, parameters: [String:String?]()) { (results, error) in
             
@@ -34,7 +34,7 @@ extension FlickrClient {
     }
     
     
-    func getPhotoCollectionWithPageNumber(photosPerPage: Int, lat: Float?, lon: Float?, completionHandlerForPhotos: @escaping (_ result: [[String: AnyObject]]?, _ error: NSError?) -> Void) {
+    func getPhotoCollectionWithPageNumber(photosPerPage: Int, lat: Double?, lon: Double?, completionHandlerForPhotos: @escaping (_ result: [[String: AnyObject]]?, _ error: NSError?) -> Void) {
         
         getPhotoCollection(lat: lat, lon: lon) { (numOfPages, error) in
             if error != nil {

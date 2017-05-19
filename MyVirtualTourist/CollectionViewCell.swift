@@ -13,5 +13,4 @@ class collectionViewCell: UICollectionViewCell {
     
     @IBOutlet weak var imageCell: UIImageView!
     
-    
 }

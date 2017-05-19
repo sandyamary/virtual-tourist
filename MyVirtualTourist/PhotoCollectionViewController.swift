@@ -15,6 +15,8 @@ class PhotoCollectionViewController: UIViewController, MKMapViewDelegate, UIColl
     let numberOfPhotosPerCollection = 15
     var images = [UIImage]()
     var annotation = MKPointAnnotation()
+    var latitude: Double!
+    var longitude: Double!
     
     @IBOutlet weak var smallMapView: MKMapView!
     
@@ -22,19 +24,18 @@ class PhotoCollectionViewController: UIViewController, MKMapViewDelegate, UIColl
     
     @IBOutlet weak var flowLayout: UICollectionViewFlowLayout!
     
-    
     // MARK: - LifeCycle
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
-        FlickrClient.sharedInstance().getPhotoCollection(lat: 17.385044, lon: 78.486671) { (numOfPages, error) in
+        FlickrClient.sharedInstance().getPhotoCollection(lat: self.latitude, lon: self.longitude) { (numOfPages, error) in
             
             if error != nil {
                 print("There was an error in service call: \(String(describing: error))")
             } else {
                 print(numOfPages!)
                 
-                FlickrClient.sharedInstance().getPhotoCollectionWithPageNumber(photosPerPage: self.numberOfPhotosPerCollection, lat: 17.385044, lon: 78.486671) { (arrayOfPhotoDictionaries, error) in
+                FlickrClient.sharedInstance().getPhotoCollectionWithPageNumber(photosPerPage: self.numberOfPhotosPerCollection, lat: self.latitude, lon: self.longitude) { (arrayOfPhotoDictionaries, error) in
                     
                     for eachPhotoDictionary in arrayOfPhotoDictionaries! {
                         print("DICTIONARY: \(eachPhotoDictionary)")
@@ -75,10 +76,17 @@ class PhotoCollectionViewController: UIViewController, MKMapViewDelegate, UIColl
         flowLayout.minimumLineSpacing = 1
         collectionView!.collectionViewLayout = flowLayout
         
+        self.latitude = self.annotation.coordinate.latitude
+        self.longitude = self.annotation.coordinate.longitude
+        
+        let center = CLLocationCoordinate2D(latitude: self.latitude, longitude: self.longitude)
+        let region = MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: 100.0, longitudeDelta: 100.0))
         
         performUIUpdatesOnMain {
             print(self.annotation)
+            self.smallMapView.setRegion(region, animated: true)
             self.smallMapView.addAnnotation(self.annotation)
+            
         }
     }
     

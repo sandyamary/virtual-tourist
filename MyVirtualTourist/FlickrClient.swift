@@ -27,7 +27,7 @@ class FlickrClient : NSObject {
     
     // MARK: GET
     
-    func taskForGETMethod(lat: Float?, lon: Float?, parameters: [String: String?], completionHandlerForGET: @escaping (_ result: AnyObject?, _ error: NSError?) -> Void) -> URLSessionDataTask {
+    func taskForGETMethod(lat: Double?, lon: Double?, parameters: [String: String?], completionHandlerForGET: @escaping (_ result: AnyObject?, _ error: NSError?) -> Void) -> URLSessionDataTask {
         
         //https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=c0ed5503bd82f3a568afe2d5d829f137&safe_search=1&lat=17.385044&lon=78.486671&extras=url_m&per_page=25&page=5&format=json&nojsoncallback=1&auth_token=72157680902758883-f25334b44dac9be0&api_sig=90f9164c5e182d54ca9919ae91115e4b
         
