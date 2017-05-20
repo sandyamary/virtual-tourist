@@ -13,6 +13,7 @@ import CoreData
 class MapViewController: UIViewController, UIGestureRecognizerDelegate, NSFetchedResultsControllerDelegate {
     
     // MARK: - Properties
+    
     var fetchedResultsController : NSFetchedResultsController<NSFetchRequestResult>? {
         didSet {
             // Whenever the frc changes, we execute the search
@@ -39,6 +40,7 @@ class MapViewController: UIViewController, UIGestureRecognizerDelegate, NSFetche
         // Get the stack
         let delegate = UIApplication.shared.delegate as! AppDelegate
         let stack = delegate.stack
+        
         
         //Load last user location and zoom level from NSUserDefaults
         mapView.delegate = self
@@ -94,7 +96,7 @@ extension MapViewController {
         let coordinate = mapView.convert(location, toCoordinateFrom: mapView)
         
         // create new pin in managedObjectContext
-        let newPin = Pin(latitude: Float(coordinate.latitude), longitude: Float(coordinate.longitude), context: fetchedResultsController!.managedObjectContext)
+        let newPin = Pin(latitude: coordinate.latitude, longitude: coordinate.longitude, context: fetchedResultsController!.managedObjectContext)
         print("Just created a new pin: \(newPin)")
         
         // Add annotation
@@ -119,9 +121,34 @@ extension MapViewController: MKMapViewDelegate {
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if (segue.identifier == "pin")
         {
-            print("SELECTED: \(selectedAnnotation)")
+            let newImages = DownloadImages(latitude: selectedAnnotation.coordinate.latitude, longitude: selectedAnnotation.coordinate.longitude)
+            for eachPhoto in newImages.downloadImages() {
+                let newPhoto = Photo(image: eachPhoto, context: fetchedResultsController!.managedObjectContext)
+                print("Just created a new photo: \(newPhoto)")
+            }
+            
             let PhotosVC = segue.destination as! PhotoCollectionViewController
-            PhotosVC.annotation = self.selectedAnnotation
+            //PhotosVC.annotation = self.selectedAnnotation
+            // Create a fetchrequest for pins
+            let fr = NSFetchRequest<NSFetchRequestResult>(entityName: "Photo")
+            fr.sortDescriptors = [NSSortDescriptor(key: "image", ascending: true)]
+            
+            // Get the stack
+            let delegate = UIApplication.shared.delegate as! AppDelegate
+            let stack = delegate.stack
+            
+            // Create the FetchedResultsController
+            fetchedResultsController = NSFetchedResultsController(fetchRequest: fr, managedObjectContext: stack.context, sectionNameKeyPath: nil, cacheName: nil)
+            
+            // load all pins from core data on viewdidload
+            let pinPhotos = fetchedResultsController?.fetchedObjects as! [Photo]
+            var allImages = [UIImage]()
+            
+            for eachPhoto in pinPhotos {
+            
+            allImages.append(UIImage(data: eachPhoto.image! as Data)!)
+            }
+            PhotosVC.images = allImages
         }
     }
     

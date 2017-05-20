@@ -12,11 +12,11 @@ import CoreData
 
 public class Pin: NSManagedObject {
     
-    convenience init(latitude: Float, longitude: Float, context: NSManagedObjectContext) {
+    convenience init(latitude: Double, longitude: Double, context: NSManagedObjectContext) {
         if let ent = NSEntityDescription.entity(forEntityName: "Pin", in: context) {
             self.init(entity: ent, insertInto: context)
-            self.latitude = latitude
-            self.longitude = longitude
+            self.latitude = Float(latitude)
+            self.longitude = Float(longitude)
         } else {
             fatalError("Unable to find entity name")
         }

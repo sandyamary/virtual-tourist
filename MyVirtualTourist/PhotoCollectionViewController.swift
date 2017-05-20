@@ -12,7 +12,7 @@ import MapKit
 
 class PhotoCollectionViewController: UIViewController, MKMapViewDelegate, UICollectionViewDelegate, UICollectionViewDataSource {
     
-    let numberOfPhotosPerCollection = 15
+    let numberOfPhotosPerCollection = 21
     var images = [UIImage]()
     var annotation = MKPointAnnotation()
     var latitude: Double!
@@ -27,44 +27,12 @@ class PhotoCollectionViewController: UIViewController, MKMapViewDelegate, UIColl
     // MARK: - LifeCycle
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
-        FlickrClient.sharedInstance().getPhotoCollection(lat: self.latitude, lon: self.longitude) { (numOfPages, error) in
-            
-            if error != nil {
-                print("There was an error in service call: \(String(describing: error))")
-            } else {
-                print(numOfPages!)
-                
-                FlickrClient.sharedInstance().getPhotoCollectionWithPageNumber(photosPerPage: self.numberOfPhotosPerCollection, lat: self.latitude, lon: self.longitude) { (arrayOfPhotoDictionaries, error) in
-                    
-                    for eachPhotoDictionary in arrayOfPhotoDictionaries! {
-                        print("DICTIONARY: \(eachPhotoDictionary)")
-                        //GUARD: Does our photo have a key url_m
-                        guard let imageUrlString = eachPhotoDictionary[FlickrClient.Constants.FlickrResponseKeys.MediumURL] as? String else {
-                            print("could not find key 'url_m'")
-                            return
-                        }
-                        
-                        //if an image exists at the url, set label and image
-                        let imageURL = URL(string: imageUrlString)
-                        if let imageData = try? Data(contentsOf: imageURL!) {
-                            self.images.append(UIImage(data: imageData)!)
-                            print("Total Images: \(self.images.count)")
-                        } else {
-                            print("Image does not exist at imageURL")
-                        }
-                        
-                    }
-                    
-                }
-                
-            }
-            self.collectionView.reloadData()
-        }
+        self.collectionView.reloadData()
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        print("Total Images Found: \(images.count)")
         self.smallMapView.delegate = self
         self.collectionView.delegate = self
         self.collectionView.dataSource = self
@@ -100,7 +68,6 @@ class PhotoCollectionViewController: UIViewController, MKMapViewDelegate, UIColl
 extension PhotoCollectionViewController {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        print(self.images.count)
         return self.images.count
     }
     
@@ -108,7 +75,7 @@ extension PhotoCollectionViewController {
         print("at cell for item")
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "collectionViewCell", for: indexPath) as! collectionViewCell
         let photo = images[(indexPath as NSIndexPath).row]
-        cell.imageCell.image = photo
+            cell.imageCell.image = photo
         return cell
     }
     
