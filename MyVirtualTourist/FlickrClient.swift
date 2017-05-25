@@ -29,27 +29,25 @@ class FlickrClient : NSObject {
     
     func taskForGETMethod(lat: Double?, lon: Double?, parameters: [String: String?], completionHandlerForGET: @escaping (_ result: AnyObject?, _ error: NSError?) -> Void) -> URLSessionDataTask {
         
-        //https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=c0ed5503bd82f3a568afe2d5d829f137&safe_search=1&lat=17.385044&lon=78.486671&extras=url_m&per_page=25&page=5&format=json&nojsoncallback=1&auth_token=72157680902758883-f25334b44dac9be0&api_sig=90f9164c5e182d54ca9919ae91115e4b
-        
         /* 1. Set the parameters */
         var searchParameters = parameters
+        
+        if let latitude = lat, let longitude = lon {
+            searchParameters[FlickrClient.Constants.FlickrParameterKeys.latitude] = "\(latitude)"
+            searchParameters[FlickrClient.Constants.FlickrParameterKeys.longitude] = "\(longitude)"
+        }
+        
         searchParameters[FlickrClient.Constants.FlickrParameterKeys.APIKey] = FlickrClient.Constants.FlickrParameterValues.APIKey
         searchParameters[FlickrClient.Constants.FlickrParameterKeys.SafeSearch] = FlickrClient.Constants.FlickrParameterValues.UseSafeSearch
         searchParameters[FlickrClient.Constants.FlickrParameterKeys.Extras] = FlickrClient.Constants.FlickrParameterValues.MediumURL
         searchParameters[Constants.FlickrParameterKeys.Method] = FlickrClient.Constants.FlickrParameterValues.SearchMethod
         searchParameters[FlickrClient.Constants.FlickrParameterKeys.Format] = FlickrClient.Constants.FlickrParameterValues.ResponseFormat
-        searchParameters[FlickrClient.Constants.FlickrParameterKeys.NoJSONCallback] = FlickrClient.Constants.FlickrParameterValues.DisableJSONCallback
-        
-        if let lat = lat, let lon = lon {
-            searchParameters[FlickrClient.Constants.FlickrParameterKeys.latitude] = "\(lat)"
-            searchParameters[FlickrClient.Constants.FlickrParameterKeys.longitude] = "\(lon)"
-        }
-        
+        searchParameters[FlickrClient.Constants.FlickrParameterKeys.NoJSONCallback] = FlickrClient.Constants.FlickrParameterValues.DisableJSONCallback     
         
         /* 2/3. Build the URL, Configure the request */
         let request = NSMutableURLRequest(url: flickrURLFromParameters(searchParameters))
         
-        print("REQUEST: \(request)")
+        print("REQUESTTTT: \(request)")
         
         /* 4. Make the request */
         let task = session.dataTask(with: request as URLRequest) { (data, response, error) in
@@ -84,7 +82,6 @@ class FlickrClient : NSObject {
         
         /* 7. Start the request */
         task.resume()
-        
         return task
 }
     

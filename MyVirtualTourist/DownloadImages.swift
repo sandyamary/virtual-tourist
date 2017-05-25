@@ -15,22 +15,12 @@ class DownloadImages: NSObject {
     let numberOfPhotosPerCollection = 21
     var latitude: Double!
     var longitude: Double!
-    var images = [UIImage]()
+    var imagesData = [Data]()
     
-    init(latitude: Double, longitude: Double) {
-        self.latitude = latitude
-        self.longitude = longitude
-    }
+    func downloadImages(latitude: Double, longitude: Double, completionHandlerForDownload: @escaping (_ result: [Data]?) -> Void) {
     
-    func downloadImages() -> [UIImage] {
-        FlickrClient.sharedInstance().getPhotoCollection(lat: self.latitude, lon: self.longitude) { (numOfPages, error) in
-            
-            if error != nil {
-                print("There was an error in service call: \(String(describing: error))")
-            } else {
-                print(numOfPages!)
                 
-                FlickrClient.sharedInstance().getPhotoCollectionWithPageNumber(photosPerPage: self.numberOfPhotosPerCollection, lat: self.latitude, lon: self.longitude) { (arrayOfPhotoDictionaries, error) in
+                FlickrClient.sharedInstance().getPhotoCollectionWithPageNumber(photosPerPage: self.numberOfPhotosPerCollection, lat: latitude, lon: longitude) { (arrayOfPhotoDictionaries, error) in
                     
                     for eachPhotoDictionary in arrayOfPhotoDictionaries! {
                         print("DICTIONARY: \(eachPhotoDictionary)")
@@ -42,20 +32,34 @@ class DownloadImages: NSObject {
                         
                         //if an image exists at the url, set label and image
                         let imageURL = URL(string: imageUrlString)
+                        
                         if let imageData = try? Data(contentsOf: imageURL!) {
-                            self.images.append(UIImage(data: imageData)!)
+   
+                            self.imagesData.append(imageData)
                         } else {
                             print("Image does not exist at imageURL")
                         }
                         
                     }
+                    if self.imagesData.count == 0 {
+                        completionHandlerForDownload(nil)
+                    } else {
+                        completionHandlerForDownload(self.imagesData)
+                    }
                     
                 }
-                
-            }
-        }
-        return images
+        
     }
+    
+    // MARK: Shared Instance
+    
+    class func sharedInstance() -> DownloadImages {
+        struct Singleton {
+            static var sharedInstance = DownloadImages()
+        }
+        return Singleton.sharedInstance
+    }
+    
 }
 
 

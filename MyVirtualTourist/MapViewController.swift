@@ -10,21 +10,12 @@ import UIKit
 import MapKit
 import CoreData
 
-class MapViewController: UIViewController, UIGestureRecognizerDelegate, NSFetchedResultsControllerDelegate {
-    
-    // MARK: - Properties
-    
-    var fetchedResultsController : NSFetchedResultsController<NSFetchRequestResult>? {
-        didSet {
-            // Whenever the frc changes, we execute the search
-            fetchedResultsController?.delegate = self
-            executeSearch()
-        }
-    }
+class MapViewController: CoreDataViewController, UIGestureRecognizerDelegate {
     
     @IBOutlet weak var mapView: MKMapView!
     var selectedAnnotation = MKPointAnnotation()
-    
+    var selectedPin: Pin!
+    var mapPins = [Pin]()
     
     // MARK: - LifeCycle
     override func viewDidLoad() {
@@ -62,7 +53,7 @@ class MapViewController: UIViewController, UIGestureRecognizerDelegate, NSFetche
         fetchedResultsController = NSFetchedResultsController(fetchRequest: fr, managedObjectContext: stack.context, sectionNameKeyPath: nil, cacheName: nil)
         
         // load all pins from core data on viewdidload
-        let mapPins = fetchedResultsController?.fetchedObjects as! [Pin]
+        mapPins = fetchedResultsController?.fetchedObjects as! [Pin]
         print(mapPins)
         var annotations = [MKPointAnnotation]()
         for eachPin in mapPins {
@@ -80,16 +71,6 @@ class MapViewController: UIViewController, UIGestureRecognizerDelegate, NSFetche
 
 
 extension MapViewController {
-    
-    func executeSearch() {
-        if let fc = fetchedResultsController {
-            do {
-                try fc.performFetch()
-            } catch let e as NSError {
-                print("Error while trying to perform a search: \n\(e)\n\(String(describing: fetchedResultsController))")
-            }
-        }
-    }
     
     func handleTap(gestureReconizer: UILongPressGestureRecognizer) {
         let location = gestureReconizer.location(in: mapView)
@@ -119,42 +100,23 @@ extension MapViewController: MKMapViewDelegate {
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if (segue.identifier == "pin")
-        {
-            let newImages = DownloadImages(latitude: selectedAnnotation.coordinate.latitude, longitude: selectedAnnotation.coordinate.longitude)
-            for eachPhoto in newImages.downloadImages() {
-                let newPhoto = Photo(image: eachPhoto, context: fetchedResultsController!.managedObjectContext)
-                print("Just created a new photo: \(newPhoto)")
-            }
+
+        if (segue.identifier == "pin") {
             
             let PhotosVC = segue.destination as! PhotoCollectionViewController
-            //PhotosVC.annotation = self.selectedAnnotation
-            // Create a fetchrequest for pins
-            let fr = NSFetchRequest<NSFetchRequestResult>(entityName: "Photo")
-            fr.sortDescriptors = [NSSortDescriptor(key: "image", ascending: true)]
-            
-            // Get the stack
-            let delegate = UIApplication.shared.delegate as! AppDelegate
-            let stack = delegate.stack
-            
-            // Create the FetchedResultsController
-            fetchedResultsController = NSFetchedResultsController(fetchRequest: fr, managedObjectContext: stack.context, sectionNameKeyPath: nil, cacheName: nil)
-            
-            // load all pins from core data on viewdidload
-            let pinPhotos = fetchedResultsController?.fetchedObjects as! [Photo]
-            var allImages = [UIImage]()
-            
-            for eachPhoto in pinPhotos {
-            
-            allImages.append(UIImage(data: eachPhoto.image! as Data)!)
-            }
-            PhotosVC.images = allImages
+            PhotosVC.annotation = self.selectedAnnotation
+            PhotosVC.pin = self.selectedPin            
         }
     }
     
-    func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
+    func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         self.selectedAnnotation = view.annotation as! MKPointAnnotation
+        for eachPin in mapPins {
+            if eachPin.latitude == Float(selectedAnnotation.coordinate.latitude), eachPin.longitude == Float(selectedAnnotation.coordinate.longitude) {
+                selectedPin = eachPin
+                print("Found the selected Pin")
+            }
+        }
         performSegue(withIdentifier: "pin", sender: view)
-        
     }
 }

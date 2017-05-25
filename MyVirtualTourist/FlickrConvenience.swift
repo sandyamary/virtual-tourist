@@ -16,7 +16,10 @@ extension FlickrClient {
     
     func getPhotoCollection(lat: Double?, lon: Double?, completionHandlerForPhotos: @escaping (_ numOfPages: Int?, _ error: NSError?) -> Void) {
         
-        let _ = taskForGETMethod(lat: lat, lon: lon, parameters: [String:String?]()) { (results, error) in
+        print("LAT: \(lat)")
+        print("LON: \(lon)")
+        let parameters = [String:String?]()
+        let _ = taskForGETMethod(lat: lat, lon: lon, parameters: parameters) { (results, error) in
             
             if let error = error {
                 print("getPhotoCollection Error: \(error)")

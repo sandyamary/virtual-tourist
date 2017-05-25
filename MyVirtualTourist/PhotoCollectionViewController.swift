@@ -6,15 +6,15 @@
 //  Copyright © 2017 Udumala, Mary. All rights reserved.
 //
 
-import Foundation
 import UIKit
 import MapKit
+import CoreData
 
-class PhotoCollectionViewController: UIViewController, MKMapViewDelegate, UICollectionViewDelegate, UICollectionViewDataSource {
+class PhotoCollectionViewController: CoreDataViewController, MKMapViewDelegate, UICollectionViewDelegate, UICollectionViewDataSource  {
     
     let numberOfPhotosPerCollection = 21
-    var images = [UIImage]()
     var annotation = MKPointAnnotation()
+    var pin: Pin!
     var latitude: Double!
     var longitude: Double!
     
@@ -32,11 +32,13 @@ class PhotoCollectionViewController: UIViewController, MKMapViewDelegate, UIColl
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        print("Total Images Found: \(images.count)")
+        
+        print("PIN: \(pin)")
+        print("ANNOTATION: \(annotation)")
+        
         self.smallMapView.delegate = self
-        self.collectionView.delegate = self
-        self.collectionView.dataSource = self
-         
+        
+        
         let width = UIScreen.main.bounds.width
         flowLayout.sectionInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
         flowLayout.itemSize = CGSize(width: width / 5, height: width / 5)
@@ -56,11 +58,62 @@ class PhotoCollectionViewController: UIViewController, MKMapViewDelegate, UIColl
             self.smallMapView.addAnnotation(self.annotation)
             
         }
+        
+        DownloadImages.sharedInstance().downloadImages(latitude: annotation.coordinate.latitude, longitude: annotation.coordinate.longitude) { (imagesData) in
+            self.collectionView.delegate = self
+            self.collectionView.dataSource = self
+            print("network calls successful")
+        }
+        
+        
+        
+        /*
+         DownloadImages.sharedInstance().downloadImages(latitude: selectedAnnotation.coordinate.latitude, longitude: selectedAnnotation.coordinate.longitude) { (imagesData) in
+         
+         print("imagesData: \(imagesData!.count)")
+         let PhotosVC = segue.destination as! PhotoCollectionViewController
+         if imagesData == nil {
+         print("FC is nil")
+         PhotosVC.fetchedResultsController = nil
+         } else {
+         for eachPhotoData in imagesData! {
+         //print("PHOTO NUMBER: \(count)")
+         let newPhotoImage = UIImage(data: eachPhotoData)
+         
+         if let pin = self.selectedPin {
+         let newPhoto = Photo(image: newPhotoImage!, context: self.fetchedResultsController!.managedObjectContext)
+         newPhoto.pin = pin
+         print("Just created a new photo: \(newPhoto)")
+         }
+         }
+         
+         //PhotosVC.annotation = self.selectedAnnotation
+         // Create a fetchrequest for photos
+         let fr = NSFetchRequest<NSFetchRequestResult>(entityName: "Photo")
+         fr.sortDescriptors = [NSSortDescriptor(key: "image", ascending: true)]
+         
+         // load all photos from core data for the selected pin
+         let pred = NSPredicate(format: "pin = %@", argumentArray: [self.selectedPin!])
+         fr.predicate = pred
+         
+         // Create FetchedResultsController
+         let fc = NSFetchedResultsController(fetchRequest: fr, managedObjectContext:self.fetchedResultsController!.managedObjectContext, sectionNameKeyPath: nil, cacheName: nil)
+         
+         print(self.mapPins)
+         
+         // Inject it into the PhotosVC
+         PhotosVC.fetchedResultsController = fc
+         }
+         
+         }
+ 
+ 
+ */
     }
     
     @IBAction func getNewCollection(_ sender: Any) {
+        
     }
-    
     
 }
 
@@ -68,15 +121,20 @@ class PhotoCollectionViewController: UIViewController, MKMapViewDelegate, UIColl
 extension PhotoCollectionViewController {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return self.images.count
+        return 21
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         print("at cell for item")
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "collectionViewCell", for: indexPath) as! collectionViewCell
-        let photo = images[(indexPath as NSIndexPath).row]
-            cell.imageCell.image = photo
+        
+        performUIUpdatesOnMain {
+            let photo = self.fetchedResultsController?.object(at: indexPath) as! Photo
+            cell.imageCell.image = UIImage(data: photo.image! as Data)
+        }
         return cell
     }
-    
 }
+
+
+
