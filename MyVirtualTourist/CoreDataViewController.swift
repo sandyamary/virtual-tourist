@@ -13,6 +13,7 @@ class CoreDataViewController: UIViewController, NSFetchedResultsControllerDelega
     
     // MARK: Properties
     
+    
     var fetchedResultsController : NSFetchedResultsController<NSFetchRequestResult>? {
         didSet {
             // Whenever the frc changes, we execute the search and

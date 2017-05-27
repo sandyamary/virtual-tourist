@@ -79,12 +79,17 @@ extension MapViewController {
         // create new pin in managedObjectContext
         let newPin = Pin(latitude: coordinate.latitude, longitude: coordinate.longitude, context: fetchedResultsController!.managedObjectContext)
         print("Just created a new pin: \(newPin)")
+        // Get the stack
+        let delegate = UIApplication.shared.delegate as! AppDelegate
+        let stack = delegate.stack
+        stack.save()
         
         // Add annotation
         let annotation = MKPointAnnotation()
         annotation.coordinate = coordinate
         mapView.addAnnotation(annotation)
         selectedAnnotation = annotation
+        selectedPin = newPin
     }
 }
 

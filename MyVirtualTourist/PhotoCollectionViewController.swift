@@ -17,6 +17,7 @@ class PhotoCollectionViewController: CoreDataViewController, MKMapViewDelegate, 
     var pin: Pin!
     var latitude: Double!
     var longitude: Double!
+    var pinPhotos = [Photo]()
     
     @IBOutlet weak var smallMapView: MKMapView!
     
@@ -27,16 +28,15 @@ class PhotoCollectionViewController: CoreDataViewController, MKMapViewDelegate, 
     // MARK: - LifeCycle
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        self.collectionView.reloadData()
+        //self.collectionView.reloadData()
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        print("PIN: \(pin)")
-        print("ANNOTATION: \(annotation)")
-        
         self.smallMapView.delegate = self
+        
+        print("PIN: \(self.pin)")
+        print("ANNOTATION: \(annotation)")
         
         
         let width = UIScreen.main.bounds.width
@@ -56,77 +56,98 @@ class PhotoCollectionViewController: CoreDataViewController, MKMapViewDelegate, 
             print(self.annotation)
             self.smallMapView.setRegion(region, animated: true)
             self.smallMapView.addAnnotation(self.annotation)
+        }
+       
+        
+        
+        // Get the stack
+        let delegate = UIApplication.shared.delegate as! AppDelegate
+        let stack = delegate.stack
+        
+        // Create a fetchrequest for photos
+        let fr = NSFetchRequest<NSFetchRequestResult>(entityName: "Photo")
+        fr.sortDescriptors = [NSSortDescriptor(key: "image", ascending: true)]
+        
+        // load all photos from core data for the selected pin
+        let pred = NSPredicate(format: "pin = %@", argumentArray: [self.pin!])
+        fr.predicate = pred
+        
+        // Create FetchedResultsController
+        self.fetchedResultsController = NSFetchedResultsController(fetchRequest: fr, managedObjectContext: stack.context, sectionNameKeyPath: nil, cacheName: nil)
+        
+        pinPhotos = self.fetchedResultsController?.fetchedObjects as! [Photo]
+        
+        if pinPhotos.count == 0 {
+            DownloadImages.sharedInstance().downloadImages(latitude: annotation.coordinate.latitude, longitude: annotation.coordinate.longitude) { (imagesData) in
+                
+                if imagesData == nil {
+                    print("FC is nil")
+                } else {
+                    for eachPhotoData in imagesData! {
+                        let newPhotoImage = UIImage(data: eachPhotoData)
+                    
+                        if let pin = self.pin, let newPhotoImage = newPhotoImage, let frc = self.fetchedResultsController {
+                            let newPhoto = Photo(image: newPhotoImage, context: frc.managedObjectContext)
+                            newPhoto.pin = pin
+                            print("Just created a new photo: \(newPhoto)")
+                        }
+                    }
+                    print("PIN WITH PICS: \(self.pin)")
+                    stack.save()
+                    print("STACK SAVED")
+                    
+                    performUIUpdatesOnMain {
+                        self.collectionView.delegate = self
+                        self.collectionView.dataSource = self
+                    }
+                    
+                }
+            }
             
+        } else {
+                self.collectionView.delegate = self
+                self.collectionView.dataSource = self
         }
         
-        DownloadImages.sharedInstance().downloadImages(latitude: annotation.coordinate.latitude, longitude: annotation.coordinate.longitude) { (imagesData) in
-            self.collectionView.delegate = self
-            self.collectionView.dataSource = self
-            print("network calls successful")
-        }
-        
-        
-        
-        /*
-         DownloadImages.sharedInstance().downloadImages(latitude: selectedAnnotation.coordinate.latitude, longitude: selectedAnnotation.coordinate.longitude) { (imagesData) in
-         
-         print("imagesData: \(imagesData!.count)")
-         let PhotosVC = segue.destination as! PhotoCollectionViewController
-         if imagesData == nil {
-         print("FC is nil")
-         PhotosVC.fetchedResultsController = nil
-         } else {
-         for eachPhotoData in imagesData! {
-         //print("PHOTO NUMBER: \(count)")
-         let newPhotoImage = UIImage(data: eachPhotoData)
-         
-         if let pin = self.selectedPin {
-         let newPhoto = Photo(image: newPhotoImage!, context: self.fetchedResultsController!.managedObjectContext)
-         newPhoto.pin = pin
-         print("Just created a new photo: \(newPhoto)")
-         }
-         }
-         
-         //PhotosVC.annotation = self.selectedAnnotation
-         // Create a fetchrequest for photos
-         let fr = NSFetchRequest<NSFetchRequestResult>(entityName: "Photo")
-         fr.sortDescriptors = [NSSortDescriptor(key: "image", ascending: true)]
-         
-         // load all photos from core data for the selected pin
-         let pred = NSPredicate(format: "pin = %@", argumentArray: [self.selectedPin!])
-         fr.predicate = pred
-         
-         // Create FetchedResultsController
-         let fc = NSFetchedResultsController(fetchRequest: fr, managedObjectContext:self.fetchedResultsController!.managedObjectContext, sectionNameKeyPath: nil, cacheName: nil)
-         
-         print(self.mapPins)
-         
-         // Inject it into the PhotosVC
-         PhotosVC.fetchedResultsController = fc
-         }
-         
-         }
- 
- 
- */
     }
+    
     
     @IBAction func getNewCollection(_ sender: Any) {
         
     }
-    
 }
 
 
 extension PhotoCollectionViewController {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 21
+        print("Test Collection View Triggered")
+        print("pinsPhotos: \(pinPhotos)")
+        if let pin = pin {
+            return (pin.photos?.count)!
+        } else {
+            return 0
+        }
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         print("at cell for item")
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "collectionViewCell", for: indexPath) as! collectionViewCell
+        
+        // Get the stack
+        let delegate = UIApplication.shared.delegate as! AppDelegate
+        let stack = delegate.stack
+        
+        // Create a fetchrequest for photos
+        let fr = NSFetchRequest<NSFetchRequestResult>(entityName: "Photo")
+        fr.sortDescriptors = [NSSortDescriptor(key: "image", ascending: true)]
+        
+        // load all photos from core data for the selected pin
+        let pred = NSPredicate(format: "pin = %@", argumentArray: [self.pin!])
+        fr.predicate = pred
+        
+        // Create FetchedResultsController
+        self.fetchedResultsController = NSFetchedResultsController(fetchRequest: fr, managedObjectContext: stack.context, sectionNameKeyPath: nil, cacheName: nil)
         
         performUIUpdatesOnMain {
             let photo = self.fetchedResultsController?.object(at: indexPath) as! Photo
@@ -134,6 +155,7 @@ extension PhotoCollectionViewController {
         }
         return cell
     }
+    
 }
 
 
