@@ -22,6 +22,7 @@ class DownloadImages: NSObject {
                 
                 FlickrClient.sharedInstance().getPhotoCollectionWithPageNumber(photosPerPage: self.numberOfPhotosPerCollection, lat: latitude, lon: longitude) { (arrayOfPhotoDictionaries, error) in
                     
+                    self.imagesData.removeAll()
                     for eachPhotoDictionary in arrayOfPhotoDictionaries! {
                         print("DICTIONARY: \(eachPhotoDictionary)")
                         //GUARD: Does our photo have a key url_m
@@ -33,8 +34,8 @@ class DownloadImages: NSObject {
                         //if an image exists at the url, set label and image
                         let imageURL = URL(string: imageUrlString)
                         
+                        
                         if let imageData = try? Data(contentsOf: imageURL!) {
-   
                             self.imagesData.append(imageData)
                         } else {
                             print("Image does not exist at imageURL")
