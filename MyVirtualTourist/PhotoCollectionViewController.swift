@@ -24,7 +24,6 @@ class PhotoCollectionViewController: CoreDataViewController, MKMapViewDelegate, 
     @IBOutlet var collectionView: UICollectionView!
     
     // MARK: - LifeCycle
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         initializeMap()
@@ -37,6 +36,29 @@ class PhotoCollectionViewController: CoreDataViewController, MKMapViewDelegate, 
             print("Loading photos from Core")
         }
     }
+    
+    
+    @IBAction func getNewCollection(_ sender: Any) {
+        //delete pin.photos from core data
+        fetchPhotoResultsController()
+        if let context = self.fetchedResultsController?.managedObjectContext, let photos = fetchedResultsController?.fetchedObjects as? [Photo] {
+            for photo in photos {
+               context.delete(photo)
+                print("Photo Deleted")
+            }
+        }
+        // Save updated pin in Core Data
+        let delegate = UIApplication.shared.delegate as! AppDelegate
+        delegate.stack.save()
+        displayNewDownloadedImages()
+    }
+}
+
+
+
+//Helper functions
+
+extension PhotoCollectionViewController {
     
     func fetchPhotoResultsController() {
         // Get the stack
@@ -72,7 +94,6 @@ class PhotoCollectionViewController: CoreDataViewController, MKMapViewDelegate, 
     
     func initializeMap() {
         self.smallMapView.delegate = self
-        
         print("PIN: \(self.pin)")
         print("ANNOTATION: \(annotation)")
         
@@ -84,6 +105,7 @@ class PhotoCollectionViewController: CoreDataViewController, MKMapViewDelegate, 
         performUIUpdatesOnMain {
             self.smallMapView.setRegion(region, animated: true)
             self.smallMapView.addAnnotation(self.annotation)
+            self.smallMapView.isUserInteractionEnabled = false
         }
     }
     
@@ -107,30 +129,14 @@ class PhotoCollectionViewController: CoreDataViewController, MKMapViewDelegate, 
                     self.createNewPhotosInFRC(imagesArray: self.pinPhotos)
                     self.collectionView.reloadData()
                 }
-                
             }
         }
     }
     
-    
-    
-    
-    @IBAction func getNewCollection(_ sender: Any) {
-        //delete pin.photos from core data
-        fetchPhotoResultsController()
-        if let context = self.fetchedResultsController?.managedObjectContext, let photos = fetchedResultsController?.fetchedObjects as? [Photo] {
-            for photo in photos {
-               context.delete(photo)
-                print("Photo Deleted")
-            }
-        }
-        // Save updated pin in Core Data
-        let delegate = UIApplication.shared.delegate as! AppDelegate
-        delegate.stack.save()
-        displayNewDownloadedImages()
-    }
 }
 
+
+// MARK - CollectionView Delegate methods
 
 extension PhotoCollectionViewController {
     
@@ -159,6 +165,25 @@ extension PhotoCollectionViewController {
         return cell
     }
     
+    func collectionView(_ collectionView: UICollectionView, didHighlightItemAt indexPath: IndexPath) {
+        
+        //get photo at indexpath
+        let orderedPhotos = (self.pin.photos?.allObjects as! [Photo])
+        let selectedPhoto = orderedPhotos[(indexPath as NSIndexPath).row]
+        
+        //delete from pin/context
+        fetchPhotoResultsController()
+        if let context = self.fetchedResultsController?.managedObjectContext {
+            context.delete(selectedPhoto)
+        }
+        
+        // Save updated pin in Core Data
+        let delegate = UIApplication.shared.delegate as! AppDelegate
+        delegate.stack.save()
+        
+        self.collectionView.reloadData()
+    }
+
 }
 
 
