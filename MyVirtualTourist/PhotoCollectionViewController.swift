@@ -13,11 +13,14 @@ import CoreData
 class PhotoCollectionViewController: CoreDataViewController, MKMapViewDelegate, UICollectionViewDelegate, UICollectionViewDataSource  {
     
     let numberOfPhotosPerCollection = 21
+    var numberOfPhotosAvailable = 0
     var annotation = MKPointAnnotation()
     var pin: Pin!
     var latitude: Double!
     var longitude: Double!
     var pinPhotos = [UIImage]()
+    var pinPhotoURLS = [URL?]()
+    var isNewDownload = true
     
     @IBOutlet weak var smallMapView: MKMapView!
     
@@ -33,6 +36,12 @@ class PhotoCollectionViewController: CoreDataViewController, MKMapViewDelegate, 
         if photos.count == 0 {
             displayNewDownloadedImages()
         } else {
+            isNewDownload = false
+            let pinPhotosArray = (self.pin.photos?.allObjects as! [Photo])
+            print("Number of pics in CD: \(pinPhotosArray.count)")
+            for eachPinPhoto in pinPhotosArray {
+                self.pinPhotoURLS.append(URL(string: eachPinPhoto.imageURL!))
+            }
             print("Loading photos from Core")
         }
     }
@@ -78,18 +87,29 @@ extension PhotoCollectionViewController {
     }
     
     
-    func createNewPhotosInFRC(imagesArray: [UIImage]) {
-        for eachImage in imagesArray {
+    func createNewPhotoInFRC(imageURL: URL, completionHandlerForDownload: @escaping (_ result: UIImage?) -> Void) {
+        
+        var image = UIImage(named:"PlaceholderImage")
+
             if let pin = self.pin, let frc = self.fetchedResultsController {
-                let newPhoto = Photo(image: eachImage, context: frc.managedObjectContext)
-                newPhoto.pin = pin
-                print("Just created a new photo: \(newPhoto)")
+                //convert URL to image
+                if let imageData = try? Data(contentsOf: imageURL) {
+                    image = UIImage(data: imageData)
+                    let newPhoto = Photo(image: image!, imageURL: imageURL.absoluteString, context: frc.managedObjectContext)
+                    newPhoto.pin = pin
+                    print("Just created a new photo: \(newPhoto)")
+                    completionHandlerForDownload(image)
+                } else {
+                    print("Image does not exist at imageURL")
+                    completionHandlerForDownload(nil)
+                }
             }
-        }
+
         // Save updated pin in Core Data
         print("PIN after new download: \(self.pin)")
         let delegate = UIApplication.shared.delegate as! AppDelegate
         delegate.stack.save()
+
     }
     
     func initializeMap() {
@@ -116,23 +136,25 @@ extension PhotoCollectionViewController {
     
     
     func displayNewDownloadedImages() {
-        DownloadImages.sharedInstance().downloadImages(latitude: annotation.coordinate.latitude, longitude: annotation.coordinate.longitude) { (imagesData) in
+        DownloadImages.sharedInstance().downloadImages(latitude: annotation.coordinate.latitude, longitude: annotation.coordinate.longitude) { (imageUrls) in
             self.pinPhotos.removeAll()
-            if imagesData == nil {
+            if imageUrls == nil {
                 print("FC is nil")
             } else {
-                for eachPhotoData in imagesData! {
-                    let newPhotoImage = UIImage(data: eachPhotoData)
-                    self.pinPhotos.append(newPhotoImage!)
+                if let imageUrls = imageUrls {
+                    for eachPhotoUrl in imageUrls {
+                        //let newPhotoImage = UIImage(data: eachPhotoData)
+                        self.pinPhotoURLS.append(eachPhotoUrl)
+                    }
                 }
+                
                 performUIUpdatesOnMain {
-                    self.createNewPhotosInFRC(imagesArray: self.pinPhotos)
+                    self.isNewDownload = true
                     self.collectionView.reloadData()
                 }
             }
         }
     }
-    
 }
 
 
@@ -142,31 +164,58 @@ extension PhotoCollectionViewController {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         print("Collection View Triggered")
-        return (self.pin.photos?.count)!
+        if isNewDownload {
+            return (self.pinPhotoURLS.count)
+        } else {
+            return (self.pin.photos?.count)!
+        }
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         print("at cell for item")
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "collectionViewCell", for: indexPath) as! collectionViewCell
-        cell.activityIndicator.startAnimating()
-        let orderedPhotos = (self.pin.photos?.allObjects as! [Photo])
         
-        let photo = orderedPhotos[(indexPath as NSIndexPath).row]
-        if let photoImage = photo.image {
+        
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "collectionViewCell", for: indexPath) as! collectionViewCell
+        
+        if !isNewDownload {
             cell.activityIndicator.stopAnimating()
             cell.activityIndicator.hidesWhenStopped = true
-            cell.imageCell.image = UIImage(data: photoImage as Data)
-            cell.imageCell.alpha = 1.0
+            let pinPhotosArray = (self.pin.photos?.allObjects as! [Photo])
+            let photo = pinPhotosArray[(indexPath as NSIndexPath).row]
+            cell.imageCell.image = UIImage(data: photo.image! as Data)
+
         } else {
-            cell.imageCell.alpha = 0.5
-            cell.activityIndicator.startAnimating()
-            //loadPhotoDataForCell(indexPath)
+            performUIUpdatesOnMain {
+                let photoURL = self.pinPhotoURLS[(indexPath as NSIndexPath).row]
+                cell.activityIndicator.startAnimating()
+                if let url = photoURL {
+                    self.createNewPhotoInFRC(imageURL: url) { (image) in
+                        if let photoImage = image {
+                            print("Found Photo in createNewPhotoInFRC")
+                            cell.activityIndicator.stopAnimating()
+                            cell.activityIndicator.hidesWhenStopped = true
+                            cell.imageCell.image = photoImage
+                            
+                        } else {
+                            cell.activityIndicator.startAnimating()
+                            
+                        }
+                        
+                    }
+                }
+            }
+            
         }
-        return cell
+ 
+     return cell
+        
     }
     
-    func collectionView(_ collectionView: UICollectionView, didHighlightItemAt indexPath: IndexPath) {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         
+//        let selectedCell: UICollectionViewCell = collectionView.cellForItem(at: indexPath)!
+//        selectedCell.contentView.backgroundColor = UIColor(red: 102/256, green: 255/256, blue: 255/256, alpha: 0.66)
+      
         //get photo at indexpath
         let orderedPhotos = (self.pin.photos?.allObjects as! [Photo])
         let selectedPhoto = orderedPhotos[(indexPath as NSIndexPath).row]
@@ -181,6 +230,7 @@ extension PhotoCollectionViewController {
         let delegate = UIApplication.shared.delegate as! AppDelegate
         delegate.stack.save()
         
+        isNewDownload = false
         self.collectionView.reloadData()
     }
 

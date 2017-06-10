@@ -16,8 +16,9 @@ class DownloadImages: NSObject {
     var latitude: Double!
     var longitude: Double!
     var imagesData = [Data]()
+    var imageURLS = [URL]()
     
-    func downloadImages(latitude: Double, longitude: Double, completionHandlerForDownload: @escaping (_ result: [Data]?) -> Void) {
+    func downloadImages(latitude: Double, longitude: Double, completionHandlerForDownload: @escaping (_ result: [URL]?) -> Void) {
     
                 
                 FlickrClient.sharedInstance().getPhotoCollectionWithPageNumber(photosPerPage: self.numberOfPhotosPerCollection, lat: latitude, lon: longitude) { (arrayOfPhotoDictionaries, error) in
@@ -34,18 +35,29 @@ class DownloadImages: NSObject {
                         //if an image exists at the url, set label and image
                         let imageURL = URL(string: imageUrlString)
                         
-                        
-                        if let imageData = try? Data(contentsOf: imageURL!) {
-                            self.imagesData.append(imageData)
-                        } else {
-                            print("Image does not exist at imageURL")
+                        if let url = imageURL {
+                            self.imageURLS.append(url)
                         }
                         
+                        
+//                        if let imageData = try? Data(contentsOf: imageURL!) {
+//                            self.imagesData.append(imageData)
+//                        } else {
+//                            print("Image does not exist at imageURL")
+//                        }
+                        
                     }
-                    if self.imagesData.count == 0 {
+                    
+//                    if self.imagesData.count == 0 {
+//                        completionHandlerForDownload(nil)
+//                    } else {
+//                        completionHandlerForDownload(self.imagesData)
+//                    }
+                    
+                    if self.imageURLS.count == 0 {
                         completionHandlerForDownload(nil)
                     } else {
-                        completionHandlerForDownload(self.imagesData)
+                        completionHandlerForDownload(self.imageURLS)
                     }
                     
                 }
