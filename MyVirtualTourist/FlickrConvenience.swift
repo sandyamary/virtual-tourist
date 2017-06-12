@@ -44,11 +44,7 @@ extension FlickrClient {
                 print("Error in First call")
             } else {
                 
-                //get a random oage from results
-                if numOfPages == 0 {
-                    print("randomPage: ZERO PAGES")
-                    return
-                } else {
+                //get a random page from results
                     let maxPages = min(numOfPages!, 40)
                     let randomPage = Int(arc4random_uniform(UInt32(maxPages)))
                     print("randomPage: \(randomPage)")
@@ -73,7 +69,7 @@ extension FlickrClient {
                             }
                         }
                     }
-                }
+                
                 
             }
             

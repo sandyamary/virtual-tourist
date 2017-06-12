@@ -18,7 +18,6 @@ class PhotoCollectionViewController: CoreDataViewController, MKMapViewDelegate, 
     var pin: Pin!
     var latitude: Double!
     var longitude: Double!
-    var pinPhotos = [UIImage]()
     var pinPhotoURLS = [URL?]()
     var isNewDownload = true
     
@@ -26,15 +25,26 @@ class PhotoCollectionViewController: CoreDataViewController, MKMapViewDelegate, 
     
     @IBOutlet var collectionView: UICollectionView!
     
+    @IBOutlet weak var noImagesLabel: UILabel!
+    
+    @IBOutlet weak var newCollectionButton: UIButton!
+    
+    @IBOutlet weak var removePhotosButton: UIButton!
+    
     // MARK: - LifeCycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        noImagesLabel.text = "Found 0 images for Location"
+        noImagesLabel.isHidden = true
+        removePhotosButton.isHidden = true
         initializeMap()
         initializeCollectionView()
         fetchPhotoResultsController()
         let photos = self.fetchedResultsController?.fetchedObjects as! [Photo]
         if photos.count == 0 {
-            displayNewDownloadedImages()
+            newCollectionButton.isEnabled = false
+            noImagesLabel.isHidden = true
+            downloadedImages()
         } else {
             isNewDownload = false
             let pinPhotosArray = (self.pin.photos?.allObjects as! [Photo])
@@ -46,23 +56,48 @@ class PhotoCollectionViewController: CoreDataViewController, MKMapViewDelegate, 
         }
     }
     
+    @IBAction func removePhotos(_ sender: Any) {
+        let orderedPhotos = (self.pin.photos?.allObjects as! [Photo])
+        let selectedPhotos = self.collectionView.indexPathsForSelectedItems
+        
+        for index in selectedPhotos! {
+            //delete from pin/context
+            fetchPhotoResultsController()
+            if let context = self.fetchedResultsController?.managedObjectContext {
+                let selectedPhoto = orderedPhotos[(index as NSIndexPath).row]
+                context.delete(selectedPhoto)
+            }
+            
+            // Save updated pin in Core Data
+            let delegate = UIApplication.shared.delegate as! AppDelegate
+            delegate.stack.save()
+            
+            isNewDownload = false
+            removePhotosButton.isHidden = true
+            newCollectionButton.isHidden = false
+            self.collectionView.reloadData()
+        }
+    }
+    
     
     @IBAction func getNewCollection(_ sender: Any) {
         //delete pin.photos from core data
+        self.noImagesLabel.isHidden = true
+        self.newCollectionButton.isEnabled = false
         fetchPhotoResultsController()
         if let context = self.fetchedResultsController?.managedObjectContext, let photos = fetchedResultsController?.fetchedObjects as? [Photo] {
             for photo in photos {
-               context.delete(photo)
+                context.delete(photo)
                 print("Photo Deleted")
             }
         }
         // Save updated pin in Core Data
         let delegate = UIApplication.shared.delegate as! AppDelegate
         delegate.stack.save()
-        displayNewDownloadedImages()
+        print("Updated PIN: \(self.pin)")
+        downloadedImages()
     }
 }
-
 
 
 //Helper functions
@@ -90,26 +125,26 @@ extension PhotoCollectionViewController {
     func createNewPhotoInFRC(imageURL: URL, completionHandlerForDownload: @escaping (_ result: UIImage?) -> Void) {
         
         var image = UIImage(named:"PlaceholderImage")
-
-            if let pin = self.pin, let frc = self.fetchedResultsController {
-                //convert URL to image
-                if let imageData = try? Data(contentsOf: imageURL) {
-                    image = UIImage(data: imageData)
-                    let newPhoto = Photo(image: image!, imageURL: imageURL.absoluteString, context: frc.managedObjectContext)
-                    newPhoto.pin = pin
-                    print("Just created a new photo: \(newPhoto)")
-                    completionHandlerForDownload(image)
-                } else {
-                    print("Image does not exist at imageURL")
-                    completionHandlerForDownload(nil)
-                }
+        
+        if let pin = self.pin, let frc = self.fetchedResultsController {
+            //convert URL to image
+            if let imageData = try? Data(contentsOf: imageURL) {
+                image = UIImage(data: imageData)
+                let newPhoto = Photo(image: image!, imageURL: imageURL.absoluteString, context: frc.managedObjectContext)
+                newPhoto.pin = pin
+                print("Just created a new photo: \(newPhoto)")
+                completionHandlerForDownload(image)
+            } else {
+                print("Image does not exist at imageURL")
+                completionHandlerForDownload(nil)
             }
-
+        }
+        
         // Save updated pin in Core Data
         print("PIN after new download: \(self.pin)")
         let delegate = UIApplication.shared.delegate as! AppDelegate
         delegate.stack.save()
-
+        
     }
     
     func initializeMap() {
@@ -135,19 +170,25 @@ extension PhotoCollectionViewController {
     }
     
     
-    func displayNewDownloadedImages() {
-        DownloadImages.sharedInstance().downloadImages(latitude: annotation.coordinate.latitude, longitude: annotation.coordinate.longitude) { (imageUrls) in
-            self.pinPhotos.removeAll()
-            if imageUrls == nil {
-                print("FC is nil")
+    func downloadedImages() {
+        
+        
+        DownloadImages.sharedInstance().downloadImages(latitude: annotation.coordinate.latitude, longitude: annotation.coordinate.longitude) { (imageUrls, errorMessage) in
+            
+            if errorMessage != nil {
+                print(errorMessage!)
+                performUIUpdatesOnMain {
+                    self.noImagesLabel.isHidden = false
+                    self.newCollectionButton.isEnabled = true
+                }
             } else {
+                self.pinPhotoURLS.removeAll()
+                self.noImagesLabel.isHidden = true
                 if let imageUrls = imageUrls {
                     for eachPhotoUrl in imageUrls {
-                        //let newPhotoImage = UIImage(data: eachPhotoData)
                         self.pinPhotoURLS.append(eachPhotoUrl)
                     }
                 }
-                
                 performUIUpdatesOnMain {
                     self.isNewDownload = true
                     self.collectionView.reloadData()
@@ -174,8 +215,9 @@ extension PhotoCollectionViewController {
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         print("at cell for item")
         
-        
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "collectionViewCell", for: indexPath) as! collectionViewCell
+        cell.imageCell.image = UIImage(named: "PlaceholderImage")
+        cell.activityIndicator.startAnimating()
         
         if !isNewDownload {
             cell.activityIndicator.stopAnimating()
@@ -183,11 +225,11 @@ extension PhotoCollectionViewController {
             let pinPhotosArray = (self.pin.photos?.allObjects as! [Photo])
             let photo = pinPhotosArray[(indexPath as NSIndexPath).row]
             cell.imageCell.image = UIImage(data: photo.image! as Data)
-
+            self.newCollectionButton.isEnabled = true
+            
         } else {
             performUIUpdatesOnMain {
                 let photoURL = self.pinPhotoURLS[(indexPath as NSIndexPath).row]
-                cell.activityIndicator.startAnimating()
                 if let url = photoURL {
                     self.createNewPhotoInFRC(imageURL: url) { (image) in
                         if let photoImage = image {
@@ -195,45 +237,48 @@ extension PhotoCollectionViewController {
                             cell.activityIndicator.stopAnimating()
                             cell.activityIndicator.hidesWhenStopped = true
                             cell.imageCell.image = photoImage
+                            self.newCollectionButton.isEnabled = true
+                            
                             
                         } else {
                             cell.activityIndicator.startAnimating()
                             
                         }
-                        
                     }
                 }
             }
-            
         }
- 
-     return cell
+        
+        return cell
         
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         
-//        let selectedCell: UICollectionViewCell = collectionView.cellForItem(at: indexPath)!
-//        selectedCell.contentView.backgroundColor = UIColor(red: 102/256, green: 255/256, blue: 255/256, alpha: 0.66)
-      
-        //get photo at indexpath
-        let orderedPhotos = (self.pin.photos?.allObjects as! [Photo])
-        let selectedPhoto = orderedPhotos[(indexPath as NSIndexPath).row]
-        
-        //delete from pin/context
-        fetchPhotoResultsController()
-        if let context = self.fetchedResultsController?.managedObjectContext {
-            context.delete(selectedPhoto)
+        collectionView.allowsMultipleSelection = true        
+        if !isEditing {
+            isEditing = true
+            newCollectionButton.isHidden = true
+            removePhotosButton.isHidden = false
         }
         
-        // Save updated pin in Core Data
-        let delegate = UIApplication.shared.delegate as! AppDelegate
-        delegate.stack.save()
+        let cell = collectionView.cellForItem(at: indexPath) as! collectionViewCell
         
-        isNewDownload = false
-        self.collectionView.reloadData()
+        cell.isHighlighted = true
     }
-
+    
+    func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
+        let cell = collectionView.cellForItem(at: indexPath) as! collectionViewCell
+        cell.isHighlighted = false
+        
+        let selectedPhotos = collectionView.indexPathsForSelectedItems
+        if (selectedPhotos?.count)! < 1 {
+            newCollectionButton.isHidden = false
+            removePhotosButton.isHidden = true
+            isEditing = false
+        }
+    }
+    
 }
 
 

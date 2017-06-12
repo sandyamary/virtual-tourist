@@ -14,4 +14,14 @@ class collectionViewCell: UICollectionViewCell {
     @IBOutlet weak var imageCell: UIImageView!    
     @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
     
+    override var isHighlighted: Bool {
+        didSet {
+            if isHighlighted {
+                self.layer.opacity = 0.5
+            } else {
+                self.layer.opacity = 1.0
+            }
+        }
+    }
+    
 }
