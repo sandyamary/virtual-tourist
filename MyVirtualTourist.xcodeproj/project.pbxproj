@@ -24,8 +24,8 @@
 		8A797B5B1ED69E45008D584E /* CoreDataViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A797B5A1ED69E45008D584E /* CoreDataViewController.swift */; };
 		8ABDCFA21EEBCBAE0008A2E5 /* Photo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ABDCFA01EEBCBAE0008A2E5 /* Photo.swift */; };
 		8ABDCFA31EEBCBAE0008A2E5 /* Photo+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ABDCFA11EEBCBAE0008A2E5 /* Photo+CoreDataProperties.swift */; };
+		8ABDCFA51EF05CDF0008A2E5 /* CoreDataStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ABDCFA41EF05CDF0008A2E5 /* CoreDataStack.swift */; };
 		8AE5A58C1EC4F5F400D6B9E2 /* Model.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 8AE5A58A1EC4F5F400D6B9E2 /* Model.xcdatamodeld */; };
-		8AE5A58E1EC527DF00D6B9E2 /* CoreDataStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AE5A58D1EC527DF00D6B9E2 /* CoreDataStack.swift */; };
 		8AE5A5A51EC52D8700D6B9E2 /* Pin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AE5A5A11EC52D8700D6B9E2 /* Pin.swift */; };
 		8AE5A5A61EC52D8700D6B9E2 /* Pin+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AE5A5A21EC52D8700D6B9E2 /* Pin+CoreDataProperties.swift */; };
 /* End PBXBuildFile section */
@@ -72,8 +72,8 @@
 		8ABDCF9B1EEBC1D80008A2E5 /* Model2.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Model2.xcdatamodel; sourceTree = "<group>"; };
 		8ABDCFA01EEBCBAE0008A2E5 /* Photo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Photo.swift; path = ../Photo.swift; sourceTree = "<group>"; };
 		8ABDCFA11EEBCBAE0008A2E5 /* Photo+CoreDataProperties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "Photo+CoreDataProperties.swift"; path = "../Photo+CoreDataProperties.swift"; sourceTree = "<group>"; };
+		8ABDCFA41EF05CDF0008A2E5 /* CoreDataStack.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CoreDataStack.swift; sourceTree = "<group>"; };
 		8AE5A58B1EC4F5F400D6B9E2 /* Model.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Model.xcdatamodel; sourceTree = "<group>"; };
-		8AE5A58D1EC527DF00D6B9E2 /* CoreDataStack.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = CoreDataStack.swift; path = "../../../../Downloads/ios-nd-persistence-swift-3/CoolNotes/03-CoreDataStackFile/CoreDataStack.swift"; sourceTree = "<group>"; };
 		8AE5A5A11EC52D8700D6B9E2 /* Pin.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Pin.swift; path = ../Pin.swift; sourceTree = "<group>"; };
 		8AE5A5A21EC52D8700D6B9E2 /* Pin+CoreDataProperties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "Pin+CoreDataProperties.swift"; path = "../Pin+CoreDataProperties.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -207,8 +207,8 @@
 			children = (
 				8A18BD221ECA5B0C00437E6E /* Clients */,
 				8AE5A5A11EC52D8700D6B9E2 /* Pin.swift */,
+				8ABDCFA41EF05CDF0008A2E5 /* CoreDataStack.swift */,
 				8AE5A5A21EC52D8700D6B9E2 /* Pin+CoreDataProperties.swift */,
-				8AE5A58D1EC527DF00D6B9E2 /* CoreDataStack.swift */,
 				8ABDCFA01EEBCBAE0008A2E5 /* Photo.swift */,
 				8ABDCFA11EEBCBAE0008A2E5 /* Photo+CoreDataProperties.swift */,
 				8AE5A58A1EC4F5F400D6B9E2 /* Model.xcdatamodeld */,
@@ -365,10 +365,10 @@
 				8A25C3F61EC3B62200A5409A /* AppDelegate.swift in Sources */,
 				8A18BD251ECA5F8100437E6E /* FlickrClient.swift in Sources */,
 				8A797B571ECD7AA8008D584E /* CollectionViewCell.swift in Sources */,
+				8ABDCFA51EF05CDF0008A2E5 /* CoreDataStack.swift in Sources */,
 				8AE5A58C1EC4F5F400D6B9E2 /* Model.xcdatamodeld in Sources */,
 				8A18BD291ECA606100437E6E /* FlickrConvenience.swift in Sources */,
 				8ABDCFA31EEBCBAE0008A2E5 /* Photo+CoreDataProperties.swift in Sources */,
-				8AE5A58E1EC527DF00D6B9E2 /* CoreDataStack.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
