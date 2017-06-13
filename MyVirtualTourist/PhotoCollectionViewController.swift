@@ -12,8 +12,6 @@ import CoreData
 
 class PhotoCollectionViewController: CoreDataViewController, MKMapViewDelegate, UICollectionViewDelegate, UICollectionViewDataSource  {
     
-    let numberOfPhotosPerCollection = 21
-    var numberOfPhotosAvailable = 0
     var annotation = MKPointAnnotation()
     var pin: Pin!
     var latitude: Double!
@@ -48,11 +46,9 @@ class PhotoCollectionViewController: CoreDataViewController, MKMapViewDelegate, 
         } else {
             isNewDownload = false
             let pinPhotosArray = (self.pin.photos?.allObjects as! [Photo])
-            print("Number of pics in CD: \(pinPhotosArray.count)")
             for eachPinPhoto in pinPhotosArray {
                 self.pinPhotoURLS.append(URL(string: eachPinPhoto.imageURL!))
             }
-            print("Loading photos from Core")
         }
     }
     
@@ -122,8 +118,7 @@ extension PhotoCollectionViewController {
     }
     
     
-    func createNewPhotoInFRC(imageURL: URL, completionHandlerForDownload: @escaping (_ result: UIImage?) -> Void) {
-        
+    func createNewPhotoInFRC(imageURL: URL, completionHandlerForDownload: @escaping (_ result: UIImage?) -> Void) {        
         var image = UIImage(named:"PlaceholderImage")
         
         if let pin = self.pin, let frc = self.fetchedResultsController {
@@ -132,16 +127,13 @@ extension PhotoCollectionViewController {
                 image = UIImage(data: imageData)
                 let newPhoto = Photo(image: image!, imageURL: imageURL.absoluteString, context: frc.managedObjectContext)
                 newPhoto.pin = pin
-                print("Just created a new photo: \(newPhoto)")
                 completionHandlerForDownload(image)
             } else {
-                print("Image does not exist at imageURL")
                 completionHandlerForDownload(nil)
             }
         }
         
         // Save updated pin in Core Data
-        print("PIN after new download: \(self.pin)")
         let delegate = UIApplication.shared.delegate as! AppDelegate
         delegate.stack.save()
         
@@ -149,9 +141,6 @@ extension PhotoCollectionViewController {
     
     func initializeMap() {
         self.smallMapView.delegate = self
-        print("PIN: \(self.pin)")
-        print("ANNOTATION: \(annotation)")
-        
         self.latitude = self.annotation.coordinate.latitude
         self.longitude = self.annotation.coordinate.longitude
         let center = CLLocationCoordinate2D(latitude: self.latitude, longitude: self.longitude)
@@ -171,12 +160,9 @@ extension PhotoCollectionViewController {
     
     
     func downloadedImages() {
-        
-        
         DownloadImages.sharedInstance().downloadImages(latitude: annotation.coordinate.latitude, longitude: annotation.coordinate.longitude) { (imageUrls, errorMessage) in
             
             if errorMessage != nil {
-                print(errorMessage!)
                 performUIUpdatesOnMain {
                     self.noImagesLabel.isHidden = false
                     self.newCollectionButton.isEnabled = true
@@ -204,7 +190,6 @@ extension PhotoCollectionViewController {
 extension PhotoCollectionViewController {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        print("Collection View Triggered")
         if isNewDownload {
             return (self.pinPhotoURLS.count)
         } else {
@@ -213,7 +198,6 @@ extension PhotoCollectionViewController {
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        print("at cell for item")
         
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "collectionViewCell", for: indexPath) as! collectionViewCell
         cell.imageCell.image = UIImage(named: "PlaceholderImage")
@@ -233,35 +217,29 @@ extension PhotoCollectionViewController {
                 if let url = photoURL {
                     self.createNewPhotoInFRC(imageURL: url) { (image) in
                         if let photoImage = image {
-                            print("Found Photo in createNewPhotoInFRC")
-                            cell.activityIndicator.stopAnimating()
-                            cell.activityIndicator.hidesWhenStopped = true
-                            cell.imageCell.image = photoImage
-                            self.newCollectionButton.isEnabled = true
-                            
-                            
+                                cell.activityIndicator.stopAnimating()
+                                cell.activityIndicator.hidesWhenStopped = true
+                                cell.imageCell.image = photoImage
+                                self.newCollectionButton.isEnabled = true
                         } else {
                             cell.activityIndicator.startAnimating()
-                            
+                            self.collectionView.reloadItems(at: [indexPath])
                         }
                     }
+                    
                 }
-            }
+           }
         }
-        
         return cell
-        
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        
-        collectionView.allowsMultipleSelection = true        
+        collectionView.allowsMultipleSelection = true
         if !isEditing {
             isEditing = true
             newCollectionButton.isHidden = true
             removePhotosButton.isHidden = false
         }
-        
         let cell = collectionView.cellForItem(at: indexPath) as! collectionViewCell
         
         cell.isHighlighted = true
@@ -270,7 +248,6 @@ extension PhotoCollectionViewController {
     func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
         let cell = collectionView.cellForItem(at: indexPath) as! collectionViewCell
         cell.isHighlighted = false
-        
         let selectedPhotos = collectionView.indexPathsForSelectedItems
         if (selectedPhotos?.count)! < 1 {
             newCollectionButton.isHidden = false

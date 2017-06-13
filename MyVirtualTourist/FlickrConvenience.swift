@@ -15,9 +15,7 @@ extension FlickrClient {
     
     
     func getPhotoCollection(lat: Double?, lon: Double?, completionHandlerForPhotos: @escaping (_ numOfPages: Int?, _ error: NSError?) -> Void) {
-        
-        print("LAT: \(lat)")
-        print("LON: \(lon)")
+
         let parameters = [String:String?]()
         let _ = taskForGETMethod(lat: lat, lon: lon, parameters: parameters) { (results, error) in
             
@@ -47,8 +45,6 @@ extension FlickrClient {
                 //get a random page from results
                     let maxPages = min(numOfPages!, 40)
                     let randomPage = Int(arc4random_uniform(UInt32(maxPages)))
-                    print("randomPage: \(randomPage)")
-                    
                     //Specify parameters
                     var parameters = [String:String?]()
                     parameters[FlickrClient.Constants.FlickrParameterKeys.Page] = "\(randomPage)"
@@ -57,7 +53,6 @@ extension FlickrClient {
                     let _ = self.taskForGETMethod(lat: lat, lon: lon, parameters: parameters) { (results, error) in
                         
                         if let error = error {
-                            print("getPhotoCollection Error: \(error)")
                             completionHandlerForPhotos(nil, error)
                         } else {
                             

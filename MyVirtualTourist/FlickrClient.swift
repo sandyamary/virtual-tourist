@@ -47,20 +47,17 @@ class FlickrClient : NSObject {
         /* 2/3. Build the URL, Configure the request */
         let request = NSMutableURLRequest(url: flickrURLFromParameters(searchParameters))
         
-        print("REQUESTTTT: \(request)")
-        
         /* 4. Make the request */
         let task = session.dataTask(with: request as URLRequest) { (data, response, error) in
             
             func sendError(_ error: String) {
-                print(error)
                 let userInfo = [NSLocalizedDescriptionKey : error]
                 completionHandlerForGET(nil, NSError(domain: "taskForGETMethod", code: 1, userInfo: userInfo))
             }
             
             /* GUARD: Was there an error? */
             guard (error == nil) else {
-                sendError("There was an error with your request: \(error)")
+                sendError("There was an error with your request: \(String(describing: error))")
                 return
             }
             
@@ -111,7 +108,6 @@ class FlickrClient : NSObject {
         for (key, value) in parameters {
             if let value = value {
             let queryItem = URLQueryItem(name: key, value: "\(value)")
-            //print("queryItem: \(queryItem)")
             components.queryItems!.append(queryItem)
             }
         }

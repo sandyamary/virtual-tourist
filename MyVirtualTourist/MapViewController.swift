@@ -57,7 +57,6 @@ class MapViewController: CoreDataViewController, UIGestureRecognizerDelegate {
         print(mapPins)
         var annotations = [MKPointAnnotation]()
         for eachPin in mapPins {
-            
             let lat = CLLocationDegrees(eachPin.latitude)
             let long = CLLocationDegrees(eachPin.longitude)
             let coordinate = CLLocationCoordinate2D(latitude: lat, longitude: long)
@@ -105,9 +104,7 @@ extension MapViewController: MKMapViewDelegate {
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-
         if (segue.identifier == "pin") {
-            
             let PhotosVC = segue.destination as! PhotoCollectionViewController
             PhotosVC.annotation = self.selectedAnnotation
             PhotosVC.pin = self.selectedPin            
@@ -119,7 +116,6 @@ extension MapViewController: MKMapViewDelegate {
         for eachPin in mapPins {
             if eachPin.latitude == Float(selectedAnnotation.coordinate.latitude), eachPin.longitude == Float(selectedAnnotation.coordinate.longitude) {
                 selectedPin = eachPin
-                print("Found the selected Pin")
             }
         }
         performSegue(withIdentifier: "pin", sender: view)

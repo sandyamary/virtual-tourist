@@ -32,16 +32,13 @@ class DownloadImages: NSObject {
                     var imageURLS = [URL]()
                     self.imagesData.removeAll()
                     for eachPhotoDictionary in arrayOfPhotoDictionaries! {
-                        print("DICTIONARY: \(eachPhotoDictionary)")
                         //GUARD: Does our photo have a key url_m
                         guard let imageUrlString = eachPhotoDictionary[FlickrClient.Constants.FlickrResponseKeys.MediumURL] as? String else {
-                            print("could not find key 'url_m'")
                             return
                         }
                         
                         //if an image exists at the url, set label and image
                         let imageURL = URL(string: imageUrlString)
-                        
                         if let url = imageURL {
                             imageURLS.append(url)
                         }                        
