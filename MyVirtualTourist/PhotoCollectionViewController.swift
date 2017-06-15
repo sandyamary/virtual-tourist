@@ -18,6 +18,7 @@ class PhotoCollectionViewController: CoreDataViewController, MKMapViewDelegate, 
     var longitude: Double!
     var pinPhotoURLS = [URL?]()
     var isNewDownload = true
+    var session: URLSession!
     
     @IBOutlet weak var smallMapView: MKMapView!
     
@@ -27,7 +28,7 @@ class PhotoCollectionViewController: CoreDataViewController, MKMapViewDelegate, 
     
     @IBOutlet weak var newCollectionButton: UIButton!
     
-    @IBOutlet weak var removePhotosButton: UIButton!
+    @IBOutlet weak var removePhotosButton: UIButton!    
     
     // MARK: - LifeCycle
     override func viewDidLoad() {
@@ -56,7 +57,6 @@ class PhotoCollectionViewController: CoreDataViewController, MKMapViewDelegate, 
     @IBAction func removePhotos(_ sender: Any) {
         let orderedPhotos = (self.pin.photos?.allObjects as! [Photo])
         let selectedPhotos = self.collectionView.indexPathsForSelectedItems
-        
         for index in selectedPhotos! {
             //delete from pin/context
             fetchPhotoResultsController()
@@ -64,11 +64,9 @@ class PhotoCollectionViewController: CoreDataViewController, MKMapViewDelegate, 
                 let selectedPhoto = orderedPhotos[(index as NSIndexPath).row]
                 context.delete(selectedPhoto)
             }
-            
             // Save updated pin in Core Data
             let delegate = UIApplication.shared.delegate as! AppDelegate
             delegate.stack.save()
-            
         }
         
         isNewDownload = false
@@ -107,7 +105,7 @@ extension PhotoCollectionViewController {
         
         // Create a fetchrequest for photos
         let fr = NSFetchRequest<NSFetchRequestResult>(entityName: "Photo")
-        fr.sortDescriptors = [NSSortDescriptor(key: "image", ascending: true)]
+        fr.sortDescriptors = [NSSortDescriptor(key: "imageURL", ascending: true)]
         
         // load all photos from core data for the selected pin
         let pred = NSPredicate(format: "pin = %@", argumentArray: [self.pin!])
@@ -118,25 +116,28 @@ extension PhotoCollectionViewController {
     }
     
     
-    func createNewPhotoInFRC(imageURL: URL, completionHandlerForDownload: @escaping (_ result: UIImage?) -> Void) {        
+    func createNewPhotoInFRC(imageURL: URL, completionHandlerForDownload: @escaping (_ result: UIImage?) -> Void) {
         var image = UIImage(named:"PlaceholderImage")
-        
         if let pin = self.pin, let frc = self.fetchedResultsController {
             //convert URL to image
-            if let imageData = try? Data(contentsOf: imageURL) {
-                image = UIImage(data: imageData)
-                let newPhoto = Photo(image: image!, imageURL: imageURL.absoluteString, context: frc.managedObjectContext)
-                newPhoto.pin = pin
-                completionHandlerForDownload(image)
-            } else {
-                completionHandlerForDownload(nil)
+            let task = URLSession.shared.dataTask(with: imageURL) { data, response, error in
+                if error != nil {
+                    completionHandlerForDownload(nil)
+                } else {
+                    image = UIImage(data: data!)
+                    if let image = image  {
+                        let newPhoto = Photo(image: image, imageURL: imageURL.absoluteString, context: frc.managedObjectContext)
+                        newPhoto.pin = pin
+                    }
+                    completionHandlerForDownload(image)
+                }
             }
+            task.resume()
         }
         
         // Save updated pin in Core Data
         let delegate = UIApplication.shared.delegate as! AppDelegate
         delegate.stack.save()
-        
     }
     
     func initializeMap() {
@@ -200,8 +201,6 @@ extension PhotoCollectionViewController {
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "collectionViewCell", for: indexPath) as! CollectionViewCell
-        cell.imageCell.image = UIImage(named: "PlaceholderImage")
-        cell.activityIndicator.startAnimating()
         
         if !isNewDownload {
             cell.activityIndicator.stopAnimating()
@@ -210,25 +209,25 @@ extension PhotoCollectionViewController {
             let photo = pinPhotosArray[(indexPath as NSIndexPath).row]
             cell.imageCell.image = UIImage(data: photo.image! as Data)
             self.newCollectionButton.isEnabled = true
-            
         } else {
-            performUIUpdatesOnMain {
-                let photoURL = self.pinPhotoURLS[(indexPath as NSIndexPath).row]
-                if let url = photoURL {
-                    self.createNewPhotoInFRC(imageURL: url) { (image) in
+            let photoURL = self.pinPhotoURLS[(indexPath as NSIndexPath).row]
+            if let url = photoURL {
+                cell.imageCell.image = UIImage(named: "PlaceholderImage")
+                cell.activityIndicator.startAnimating()
+                self.createNewPhotoInFRC(imageURL: url) { (image) in
+                    self.performUIUpdatesOnMain {
                         if let photoImage = image {
-                                cell.activityIndicator.stopAnimating()
-                                cell.activityIndicator.hidesWhenStopped = true
-                                cell.imageCell.image = photoImage
-                                self.newCollectionButton.isEnabled = true
+                            cell.activityIndicator.stopAnimating()
+                            cell.activityIndicator.hidesWhenStopped = true
+                            cell.imageCell.image = photoImage
+                            self.newCollectionButton.isEnabled = true
                         } else {
                             cell.activityIndicator.startAnimating()
                             self.collectionView.reloadItems(at: [indexPath])
                         }
                     }
-                    
                 }
-           }
+            }
         }
         return cell
     }
