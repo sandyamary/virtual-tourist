@@ -46,6 +46,7 @@ class PhotoCollectionViewController: CoreDataViewController, MKMapViewDelegate, 
         } else {
             isNewDownload = false
             let pinPhotosArray = (self.pin.photos?.allObjects as! [Photo])
+            pinPhotoURLS.removeAll()
             for eachPinPhoto in pinPhotosArray {
                 self.pinPhotoURLS.append(URL(string: eachPinPhoto.imageURL!))
             }
@@ -68,11 +69,12 @@ class PhotoCollectionViewController: CoreDataViewController, MKMapViewDelegate, 
             let delegate = UIApplication.shared.delegate as! AppDelegate
             delegate.stack.save()
             
-            isNewDownload = false
-            removePhotosButton.isHidden = true
-            newCollectionButton.isHidden = false
-            self.collectionView.reloadData()
         }
+        
+        isNewDownload = false
+        removePhotosButton.isHidden = true
+        newCollectionButton.isHidden = false
+        self.collectionView.reloadData()
     }
     
     
@@ -84,13 +86,11 @@ class PhotoCollectionViewController: CoreDataViewController, MKMapViewDelegate, 
         if let context = self.fetchedResultsController?.managedObjectContext, let photos = fetchedResultsController?.fetchedObjects as? [Photo] {
             for photo in photos {
                 context.delete(photo)
-                print("Photo Deleted")
             }
         }
         // Save updated pin in Core Data
         let delegate = UIApplication.shared.delegate as! AppDelegate
         delegate.stack.save()
-        print("Updated PIN: \(self.pin)")
         downloadedImages()
     }
 }
@@ -163,7 +163,7 @@ extension PhotoCollectionViewController {
         DownloadImages.sharedInstance().downloadImages(latitude: annotation.coordinate.latitude, longitude: annotation.coordinate.longitude) { (imageUrls, errorMessage) in
             
             if errorMessage != nil {
-                performUIUpdatesOnMain {
+                self.performUIUpdatesOnMain {
                     self.noImagesLabel.isHidden = false
                     self.newCollectionButton.isEnabled = true
                 }
@@ -175,7 +175,7 @@ extension PhotoCollectionViewController {
                         self.pinPhotoURLS.append(eachPhotoUrl)
                     }
                 }
-                performUIUpdatesOnMain {
+                self.performUIUpdatesOnMain {
                     self.isNewDownload = true
                     self.collectionView.reloadData()
                 }
@@ -199,7 +199,7 @@ extension PhotoCollectionViewController {
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "collectionViewCell", for: indexPath) as! collectionViewCell
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "collectionViewCell", for: indexPath) as! CollectionViewCell
         cell.imageCell.image = UIImage(named: "PlaceholderImage")
         cell.activityIndicator.startAnimating()
         
@@ -235,18 +235,14 @@ extension PhotoCollectionViewController {
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         collectionView.allowsMultipleSelection = true
-        if !isEditing {
-            isEditing = true
-            newCollectionButton.isHidden = true
-            removePhotosButton.isHidden = false
-        }
-        let cell = collectionView.cellForItem(at: indexPath) as! collectionViewCell
-        
+        newCollectionButton.isHidden = true
+        removePhotosButton.isHidden = false
+        let cell = collectionView.cellForItem(at: indexPath) as! CollectionViewCell
         cell.isHighlighted = true
     }
     
     func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
-        let cell = collectionView.cellForItem(at: indexPath) as! collectionViewCell
+        let cell = collectionView.cellForItem(at: indexPath) as! CollectionViewCell
         cell.isHighlighted = false
         let selectedPhotos = collectionView.indexPathsForSelectedItems
         if (selectedPhotos?.count)! < 1 {

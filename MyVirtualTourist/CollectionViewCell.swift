@@ -9,7 +9,7 @@
 import Foundation
 import UIKit
 
-class collectionViewCell: UICollectionViewCell {
+class CollectionViewCell: UICollectionViewCell {
     
     @IBOutlet weak var imageCell: UIImageView!    
     @IBOutlet weak var activityIndicator: UIActivityIndicatorView!

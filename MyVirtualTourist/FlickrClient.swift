@@ -10,7 +10,7 @@ import Foundation
 
 // MARK: - ParseClient: NSObject
 
-class FlickrClient : NSObject {
+class FlickrClient {
     
     // MARK: Properties
     
@@ -18,12 +18,6 @@ class FlickrClient : NSObject {
     var session = URLSession.shared
     
     var objectID: String? = nil
-    
-    
-    // MARK: Initializers
-    override init() {
-        super.init()
-    }
     
     // MARK: GET
     

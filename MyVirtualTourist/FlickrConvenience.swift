@@ -20,7 +20,6 @@ extension FlickrClient {
         let _ = taskForGETMethod(lat: lat, lon: lon, parameters: parameters) { (results, error) in
             
             if let error = error {
-                print("getPhotoCollection Error: \(error)")
                 completionHandlerForPhotos(nil, error)
             } else {
                 

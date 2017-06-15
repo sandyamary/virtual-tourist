@@ -54,7 +54,6 @@ class MapViewController: CoreDataViewController, UIGestureRecognizerDelegate {
         
         // load all pins from core data on viewdidload
         mapPins = fetchedResultsController?.fetchedObjects as! [Pin]
-        print(mapPins)
         var annotations = [MKPointAnnotation]()
         for eachPin in mapPins {
             let lat = CLLocationDegrees(eachPin.latitude)
@@ -77,7 +76,6 @@ extension MapViewController {
         
         // create new pin in managedObjectContext
         let newPin = Pin(latitude: coordinate.latitude, longitude: coordinate.longitude, context: fetchedResultsController!.managedObjectContext)
-        print("Just created a new pin: \(newPin)")
         // Get the stack
         let delegate = UIApplication.shared.delegate as! AppDelegate
         let stack = delegate.stack
